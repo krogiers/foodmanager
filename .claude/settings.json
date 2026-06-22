@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; echo \"$f\" | grep -qE '\\.kt$' && [ -f /Users/kurtrogiers/Dev/Kotlin/gradlew ] && (cd /Users/kurtrogiers/Dev/Kotlin && ./gradlew compileKotlin --daemon 2>&1) || true; }",
+            "timeout": 120,
+            "statusMessage": "Compiling Kotlin..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f /Users/kurtrogiers/Dev/Kotlin/gradlew ]; then cd /Users/kurtrogiers/Dev/Kotlin && ./gradlew test --daemon 2>&1 || exit 2; fi",
+            "timeout": 300,
+            "asyncRewake": true,
+            "statusMessage": "Running tests..."
+          }
+        ]
+      }
+    ]
+  }
+}

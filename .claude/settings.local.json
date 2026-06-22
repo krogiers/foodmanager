@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(mkdir -p /Users/kurtrogiers/Dev/Kotlin/.claude/specs)",
+      "Bash(./gradlew test *)",
+      "Bash(./gradlew bootRun)",
+      "Bash(curl -s http://localhost:8080/api/ingredienten)",
+      "Bash(curl -s \"http://localhost:8080/api/klanten/bf0dd4da-ec6d-4f35-b181-920e0b1b3546\")",
+      "Bash(npm run *)"
+    ],
+    "additionalDirectories": [
+      "/Users/kurtrogiers/Dev/Kotlin/.claude"
+    ]
+  }
+}
