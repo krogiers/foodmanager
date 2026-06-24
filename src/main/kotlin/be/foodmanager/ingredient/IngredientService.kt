@@ -7,7 +7,7 @@ import be.foodmanager.common.PageRequest
 import be.foodmanager.common.PagedResponse
 import be.foodmanager.ingredient.dto.*
 import be.foodmanager.ingredient.nutrition.NutritionProviderService
-import be.foodmanager.ingredient.nutrition.NutritionZoekResultaat
+import be.foodmanager.ingredient.nutrition.NutritionZoekPagina
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -40,6 +40,7 @@ class IngredientService(
             naam = request.naam,
             eenheid = request.eenheid,
             aankoopprijs = request.aankoopprijs,
+            categorie = request.categorie,
             voedingswaarden = request.voedingswaarden?.naarDomein(),
             allergenen = request.allergenen.map { it.naarDomein() }
         )
@@ -61,6 +62,7 @@ class IngredientService(
             naam = request.naam,
             eenheid = request.eenheid,
             aankoopprijs = request.aankoopprijs,
+            categorie = request.categorie,
             voedingswaarden = request.voedingswaarden?.naarDomein(),
             allergenen = request.allergenen.map { it.naarDomein() }
         )
@@ -79,8 +81,13 @@ class IngredientService(
         return Unit.right()
     }
 
-    fun zoekViaNutritionProvider(query: String): Either<IngredientFout, List<NutritionZoekResultaat>> =
-        Either.catch { nutritionProviderService.zoek(query) }
+    fun zoekViaNutritionProvider(
+        query: String,
+        pagina: Int = 0,
+        paginaGrootte: Int = 20,
+        merk: String? = null
+    ): Either<IngredientFout, NutritionZoekPagina> =
+        Either.catch { nutritionProviderService.zoek(query, pagina, paginaGrootte, merk) }
             .mapLeft { IngredientFout.ExterneProviderFout(it.message ?: "Onbekende fout") }
 
     @Transactional
@@ -97,8 +104,9 @@ class IngredientService(
                     naam = naam,
                     eenheid = eenheid,
                     aankoopprijs = aankoopprijs,
+                    categorie = detail.categorie,
                     voedingswaarden = detail.voedingswaarden,
-                    allergenen = detail.allergenen.toMutableList()
+                    allergenen = detail.allergenen
                 ).let { repository.save(it) }
                     .also { events.publishEvent(IngredientEvent.Aangemaakt(it)) }
                     .naarResponse()
@@ -110,6 +118,7 @@ private fun Ingredient.naarResponse() = IngredientResponse(
     naam = naam,
     eenheid = eenheid,
     aankoopprijs = aankoopprijs,
+    categorie = categorie,
     voedingswaarden = voedingswaarden?.naarResponse(),
     allergenen = allergenen.map { IngredientAllergeenResponse(it.allergeen, it.aanwezigheid) }
 )

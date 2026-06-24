@@ -1,6 +1,8 @@
 package be.foodmanager.klant
 
 import arrow.core.Either
+import be.foodmanager.common.PageRequest
+import be.foodmanager.common.PagedResponse
 import be.foodmanager.ingredient.Allergeen
 import be.foodmanager.klant.dto.KlantAanmakenRequest
 import be.foodmanager.klant.dto.KlantWijzigenRequest
@@ -31,14 +33,14 @@ class KlantServiceTest {
     @Test
     fun `aanmaken van klant geeft Right met response terug`() {
         val request = maakAanmakenRequest()
-        val opgeslagen = maakKlant(naam = request.naam, email = request.email)
+        val opgeslagen = maakKlant(familienaam = request.familienaam, email = request.email ?: faker.internet().emailAddress())
 
         whenever(repository.save(any())).thenReturn(opgeslagen)
 
         val resultaat = service.maakAan(request)
 
         assertThat(resultaat).isInstanceOf(Either.Right::class.java)
-        assertThat((resultaat as Either.Right).value.naam).isEqualTo(opgeslagen.naam)
+        assertThat((resultaat as Either.Right).value.familienaam).isEqualTo(opgeslagen.familienaam)
         verify(events).publishEvent(any<KlantEvent.Aangemaakt>())
     }
 
@@ -89,22 +91,24 @@ class KlantServiceTest {
     }
 
     @Test
-    fun `zoekAlle geeft lijst van klanten terug`() {
+    fun `zoekPaged geeft gepagineerde lijst van klanten terug`() {
         val klanten = listOf(maakKlant(), maakKlant())
-        whenever(repository.findAll(null)).thenReturn(klanten)
+        val pageRequest = PageRequest(0, 20, "familienaam", "ASC")
+        whenever(repository.findPaged(null, null, pageRequest))
+            .thenReturn(PagedResponse(klanten, 2, 1, 0, 20))
 
-        val resultaat = service.zoekAlle()
+        val resultaat = service.zoekPaged(null, null, pageRequest)
 
-        assertThat(resultaat).hasSize(2)
+        assertThat(resultaat.content).hasSize(2)
     }
 
     private fun maakKlant(
-        naam: String = faker.name().fullName(),
+        familienaam: String = faker.name().lastName(),
         email: String = faker.internet().emailAddress(),
         isGeanonimiseerd: Boolean = false
     ) = Klant(
         id = UUID.randomUUID(),
-        naam = naam,
+        familienaam = familienaam,
         email = email,
         herkomst = Herkomst.MOND_TOT_MOND,
         voorkeurContactwijze = VoorkeurContactwijze.EMAIL,
@@ -113,7 +117,7 @@ class KlantServiceTest {
     )
 
     private fun maakAanmakenRequest() = KlantAanmakenRequest(
-        naam = faker.name().fullName(),
+        familienaam = faker.name().lastName(),
         email = faker.internet().emailAddress(),
         herkomst = Herkomst.SOCIALE_MEDIA,
         voorkeurContactwijze = VoorkeurContactwijze.WHATSAPP,
@@ -121,7 +125,7 @@ class KlantServiceTest {
     )
 
     private fun maakWijzigenRequest() = KlantWijzigenRequest(
-        naam = faker.name().fullName(),
+        familienaam = faker.name().lastName(),
         email = faker.internet().emailAddress(),
         herkomst = Herkomst.WEBSITE,
         voorkeurContactwijze = VoorkeurContactwijze.EMAIL

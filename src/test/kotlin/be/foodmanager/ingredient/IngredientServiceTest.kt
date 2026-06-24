@@ -1,6 +1,8 @@
 package be.foodmanager.ingredient
 
 import arrow.core.Either
+import be.foodmanager.common.PageRequest
+import be.foodmanager.common.PagedResponse
 import be.foodmanager.ingredient.dto.IngredientAanmakenRequest
 import be.foodmanager.ingredient.dto.IngredientWijzigenRequest
 import be.foodmanager.ingredient.dto.VoedingswaardenRequest
@@ -69,24 +71,15 @@ class IngredientServiceTest {
     }
 
     @Test
-    fun `zoekAlle zonder filter haalt alle ingredienten op`() {
+    fun `zoekPaged geeft gepagineerde lijst van ingredienten terug`() {
         val ingredienten = listOf(maakIngredient(), maakIngredient())
-        whenever(repository.findAll()).thenReturn(ingredienten)
+        val pageRequest = PageRequest(0, 20, "naam", "ASC")
+        whenever(repository.findPaged(null, pageRequest))
+            .thenReturn(PagedResponse(ingredienten, 2, 1, 0, 20))
 
-        val resultaat = service.zoekAlle()
+        val resultaat = service.zoekPaged(null, pageRequest)
 
-        assertThat(resultaat).hasSize(2)
-    }
-
-    @Test
-    fun `zoekAlle met naam filtert op naam`() {
-        val zoekterm = faker.food().ingredient()
-        whenever(repository.findByNaamContainingIgnoreCase(zoekterm)).thenReturn(listOf(maakIngredient(naam = zoekterm)))
-
-        val resultaat = service.zoekAlle(naam = zoekterm)
-
-        assertThat(resultaat).hasSize(1)
-        assertThat(resultaat.first().naam).isEqualTo(zoekterm)
+        assertThat(resultaat.content).hasSize(2)
     }
 
     @Test
@@ -129,8 +122,10 @@ class IngredientServiceTest {
     }
 
     private fun maakIngredient(naam: String = faker.food().ingredient(), eenheid: Eenheid = Eenheid.G) =
-        Ingredient(id = UUID.randomUUID(), naam = naam, eenheid = eenheid,
-            aankoopprijs = BigDecimal(faker.number().randomDouble(2, 1, 20)))
+        Ingredient(
+            id = UUID.randomUUID(), naam = naam, eenheid = eenheid,
+            aankoopprijs = BigDecimal(faker.number().randomDouble(2, 1, 20))
+        )
 
     private fun maakAanmakenRequest() = IngredientAanmakenRequest(
         naam = faker.food().ingredient(), eenheid = Eenheid.G,

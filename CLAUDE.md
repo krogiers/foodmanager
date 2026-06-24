@@ -88,12 +88,25 @@ Gedetailleerde specs per domein staan in `.claude/specs/`:
 - Warme accentkleur: `amber` — past bij een voedingsbedrijf
 - Statuskleuren: groen (ok) / oranje (opgelet) / rood (tekort of fout)
 
+### Navigatiepatroon — VERPLICHT voor elke module
+
+**Geen SlideOver voor CRUD-acties. Alles op een eigen pagina.**
+
+| Actie | Gedrag |
+|-------|--------|
+| "Nieuw" knop in lijst | Navigeer naar `/module/nieuw` — volwaardig aanmaakscherm |
+| Dubbelklik of edit-knop in lijst | Navigeer naar `/module/:id` — volwaardig detailscherm |
+| Detailscherm (view) | Breadcrumb + tabs + read-only velden via `Veld`-component |
+| "Bewerken" op detailscherm | Schakelt inline naar edit-modus — zelfde layout, velden worden invoervelden |
+| Opslaan/Annuleren | Terug naar view-modus op dezelfde pagina |
+
+SlideOver (`<SlideOver>`) is **verboden** voor detail, bewerken en aanmaken. Het mag alleen voor contextuele acties zonder eigen pagina (bv. een bevestigingsdialoog of een filter-paneel).
+
 ### UI-patronen per module
 | Module | Primaire weergave |
 |--------|------------------|
-| Ingrediënten, Recepten, Producten | Zoekbare tabel + slide-over detailpaneel |
+| Alle modules | Zoekbare tabel in lijst, volwaardig detailscherm op eigen route |
 | Reservaties | Kalenderweergave (week/maand) als primair, lijstweergave als alternatief |
-| Klanten | Kaartenlijst met allergenen-badges en laatste bestelling |
 | Stock | Tabel met kleurindicatoren voor stockniveau |
 | Labels | Split-screen: editor links, preview rechts |
 | Dashboard (startpagina) | Widgets: reservaties vandaag, stockwaarschuwingen, recente klanten |

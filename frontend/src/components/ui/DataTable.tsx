@@ -27,6 +27,7 @@ interface DataTableProps<T> {
   sortState: SortState
   onPageChange: (page: number) => void
   onSortChange: (sort: SortState) => void
+  onRowClick?: (row: T) => void
   onRowDoubleClick?: (row: T) => void
   onEdit?: (row: T) => void
   onDelete?: (row: T) => void
@@ -36,7 +37,7 @@ interface DataTableProps<T> {
 
 export function DataTable<T>({
   columns, data, totalElements, totalPages, pageState, sortState,
-  onPageChange, onSortChange, onRowDoubleClick, onEdit, onDelete,
+  onPageChange, onSortChange, onRowClick, onRowDoubleClick, onEdit, onDelete,
   keyFn, emptyMessage = 'Geen resultaten gevonden.'
 }: DataTableProps<T>) {
 
@@ -97,11 +98,12 @@ export function DataTable<T>({
               data.map((row, i) => (
                 <tr
                   key={keyFn(row)}
+                  onClick={() => onRowClick?.(row)}
                   onDoubleClick={() => onRowDoubleClick?.(row)}
                   className={cn(
                     'border-b border-slate-100 transition-colors group',
                     i % 2 === 0 ? 'bg-white' : 'bg-slate-50',
-                    onRowDoubleClick && 'cursor-pointer hover:bg-amber-50'
+                    (onRowClick || onRowDoubleClick) && 'cursor-pointer hover:bg-amber-50'
                   )}
                 >
                   {columns.map(col => (

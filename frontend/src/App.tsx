@@ -3,7 +3,10 @@ import { Toaster } from 'sonner'
 import { AppShell } from './components/layout/AppShell'
 import { Dashboard } from './pages/Dashboard'
 import { IngredientenPage } from './pages/ingredienten/IngredientenPage'
+import { IngredientNieuwPage } from './pages/ingredienten/IngredientNieuwPage'
+import { IngredientDetailPage } from './pages/ingredienten/IngredientDetailPage'
 import { KlantenPage } from './pages/klanten/KlantenPage'
+import { KlantNieuwPage } from './pages/klanten/KlantNieuwPage'
 import { KlantDetailPage } from './pages/klanten/KlantDetailPage'
 
 export default function App() {
@@ -14,7 +17,10 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/ingredienten" element={<IngredientenPage />} />
+          <Route path="/ingredienten/nieuw" element={<IngredientNieuwPage />} />
+          <Route path="/ingredienten/:id" element={<IngredientDetailPage />} />
           <Route path="/klanten" element={<KlantenPage />} />
+          <Route path="/klanten/nieuw" element={<KlantNieuwPage />} />
           <Route path="/klanten/:id" element={<KlantDetailPage />} />
           <Route path="/recepten" element={<Placeholder titel="Recepten" />} />
           <Route path="/producten" element={<Placeholder titel="Producten" />} />

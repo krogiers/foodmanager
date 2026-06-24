@@ -17,8 +17,8 @@ class KlantService(
     private val repository: KlantRepository,
     private val events: ApplicationEventPublisher
 ) {
-    fun zoekPaged(zoekterm: String? = null, pageRequest: PageRequest): PagedResponse<KlantResponse> {
-        val p = repository.findPaged(zoekterm, pageRequest)
+    fun zoekPaged(zoekterm: String? = null, herkomst: Herkomst? = null, pageRequest: PageRequest): PagedResponse<KlantResponse> {
+        val p = repository.findPaged(zoekterm, herkomst, pageRequest)
         return PagedResponse(p.content.map { it.naarResponse() }, p.totalElements, p.totalPages, p.page, p.size)
     }
 

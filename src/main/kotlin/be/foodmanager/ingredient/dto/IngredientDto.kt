@@ -11,6 +11,7 @@ data class IngredientAanmakenRequest(
     @field:NotBlank val naam: String,
     @field:NotNull val eenheid: Eenheid,
     val aankoopprijs: BigDecimal? = null,
+    val categorie: String? = null,
     @field:Valid val voedingswaarden: VoedingswaardenRequest? = null,
     val allergenen: List<IngredientAllergeenRequest> = emptyList()
 )
@@ -19,6 +20,7 @@ data class IngredientWijzigenRequest(
     @field:NotBlank val naam: String,
     @field:NotNull val eenheid: Eenheid,
     val aankoopprijs: BigDecimal? = null,
+    val categorie: String? = null,
     @field:Valid val voedingswaarden: VoedingswaardenRequest? = null,
     val allergenen: List<IngredientAllergeenRequest> = emptyList()
 )
@@ -44,6 +46,7 @@ data class IngredientResponse(
     val naam: String,
     val eenheid: Eenheid,
     val aankoopprijs: BigDecimal?,
+    val categorie: String?,
     val voedingswaarden: VoedingswaardenResponse?,
     val allergenen: List<IngredientAllergeenResponse>
 )

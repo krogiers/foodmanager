@@ -13,7 +13,7 @@ import java.util.UUID
 @Repository
 class KlantRepository {
 
-    fun findPaged(zoekterm: String? = null, pageRequest: PageRequest): PagedResponse<Klant> {
+    fun findPaged(zoekterm: String? = null, herkomst: Herkomst? = null, pageRequest: PageRequest): PagedResponse<Klant> {
         val sortColumn = when (pageRequest.sortBy) {
             "voornaam" -> KlantenTable.voornaam
             "email" -> KlantenTable.email
@@ -22,14 +22,19 @@ class KlantRepository {
         }
         val sortOrder = if (pageRequest.sortDir == "DESC") SortOrder.DESC else SortOrder.ASC
 
-        fun baseQuery() = if (zoekterm != null) {
-            val term = "%${zoekterm.lowercase()}%"
-            KlantenTable.selectAll().where {
-                (KlantenTable.familienaam.lowerCase() like term) or
-                (KlantenTable.voornaam.lowerCase() like term)
+        fun baseQuery(): Query {
+            val q = KlantenTable.selectAll()
+            if (zoekterm != null) {
+                val term = "%${zoekterm.lowercase()}%"
+                q.andWhere {
+                    (KlantenTable.familienaam.lowerCase() like term) or
+                    (KlantenTable.voornaam.lowerCase() like term)
+                }
             }
-        } else {
-            KlantenTable.selectAll()
+            if (herkomst != null) {
+                q.andWhere { KlantenTable.herkomst eq herkomst }
+            }
+            return q
         }
 
         val total = baseQuery().count()

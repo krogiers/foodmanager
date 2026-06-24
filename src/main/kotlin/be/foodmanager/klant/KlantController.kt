@@ -16,11 +16,12 @@ class KlantController(private val service: KlantService) {
     @GetMapping
     fun zoekAlle(
         @RequestParam zoekterm: String? = null,
+        @RequestParam herkomst: Herkomst? = null,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam(defaultValue = "familienaam") sortBy: String,
         @RequestParam(defaultValue = "ASC") sortDir: String
-    ) = service.zoekPaged(zoekterm, PageRequest(page, size, sortBy, sortDir))
+    ) = service.zoekPaged(zoekterm, herkomst, PageRequest(page, size, sortBy, sortDir))
 
     @GetMapping("/{id}")
     fun haalOp(@PathVariable id: UUID): ResponseEntity<*> =

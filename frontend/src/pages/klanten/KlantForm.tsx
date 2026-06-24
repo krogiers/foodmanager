@@ -76,7 +76,7 @@ function vanKlant(k: KlantResponse): FormData {
 
 interface Props {
   klant?: KlantResponse
-  onOpgeslagen: () => void
+  onOpgeslagen: (opgeslagen: KlantResponse) => void
   onAnnuleer: () => void
 }
 
@@ -125,13 +125,14 @@ export function KlantForm({ klant, onOpgeslagen, onAnnuleer }: Props) {
         specialeEisen: form.specialeEisen.filter(e => e.trim())
       }
       if (klant) {
-        await axios.put(`/api/klanten/${klant.id}`, body)
+        const { data } = await axios.put(`/api/klanten/${klant.id}`, body)
         toast.success('Klant bijgewerkt.')
+        onOpgeslagen(data)
       } else {
-        await axios.post('/api/klanten', body)
+        const { data } = await axios.post('/api/klanten', body)
         toast.success('Klant aangemaakt.')
+        onOpgeslagen(data)
       }
-      onOpgeslagen()
     } catch (err: unknown) {
       const msg = axios.isAxiosError(err) ? err.response?.data?.bericht : null
       toast.error(msg ?? 'Opslaan mislukt.')

@@ -8,8 +8,8 @@ class NutritionProviderService(
     private val registry: NutritionProviderRegistry,
     private val instellingenRepository: ProviderInstellingenRepository
 ) {
-    fun zoek(query: String): List<NutritionZoekResultaat> =
-        actieveProvider().zoek(query)
+    fun zoek(query: String, pagina: Int = 0, paginaGrootte: Int = 20, merk: String? = null): NutritionZoekPagina =
+        actieveProvider().zoek(query, pagina, paginaGrootte, merk)
 
     fun haalDetail(externeId: String): NutritionDetail =
         actieveProvider().haalDetail(externeId)

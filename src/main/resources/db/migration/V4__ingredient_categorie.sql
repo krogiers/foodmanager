@@ -1,0 +1,1 @@
+ALTER TABLE ingredienten ADD COLUMN categorie VARCHAR(255) NULL;

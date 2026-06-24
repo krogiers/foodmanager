@@ -3,11 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { Plus, Search } from 'lucide-react'
 import { toast } from 'sonner'
-import { SlideOver } from '../../components/ui/SlideOver'
 import { AllergeenBadge } from '../../components/ui/AllergeenBadge'
 import { DataTable, type Column, type SortState, type PageState } from '../../components/ui/DataTable'
-import { KlantForm } from './KlantForm'
-import type { KlantResponse } from '../../types/klant'
+import type { Herkomst, KlantResponse } from '../../types/klant'
+
+const HERKOMST_FILTER: { value: Herkomst | ''; label: string }[] = [
+  { value: '', label: 'Alle' },
+  { value: 'MOND_TOT_MOND', label: 'Mond tot mond' },
+  { value: 'SOCIALE_MEDIA', label: 'Sociale media' },
+  { value: 'WEBSITE', label: 'Website' },
+  { value: 'EVENT', label: 'Event' },
+  { value: 'ANDERE', label: 'Andere' },
+]
 
 const columns: Column<KlantResponse>[] = [
   { key: 'familienaam', label: 'Naam', sortable: true, render: r => r.volledigNaam },
@@ -35,7 +42,7 @@ export function KlantenPage() {
   const [pageState, setPageState] = useState<PageState>({ page: 0, size: 20 })
   const [sortState, setSortState] = useState<SortState>({ sortBy: 'familienaam', sortDir: 'ASC' })
   const [zoekterm, setZoekterm] = useState('')
-  const [nieuwOpen, setNieuwOpen] = useState(false)
+  const [filterHerkomst, setFilterHerkomst] = useState<Herkomst | ''>('')
 
   const laadData = useCallback(async () => {
     try {
@@ -44,7 +51,8 @@ export function KlantenPage() {
         size: String(pageState.size),
         sortBy: sortState.sortBy,
         sortDir: sortState.sortDir,
-        ...(zoekterm ? { zoekterm } : {})
+        ...(zoekterm ? { zoekterm } : {}),
+        ...(filterHerkomst ? { herkomst: filterHerkomst } : {}),
       })
       const { data: result } = await axios.get(`/api/klanten?${params}`)
       setData(result.content)
@@ -53,31 +61,54 @@ export function KlantenPage() {
     } catch {
       toast.error('Kon klanten niet laden.')
     }
-  }, [pageState, sortState, zoekterm])
+  }, [pageState, sortState, zoekterm, filterHerkomst])
 
   useEffect(() => { laadData() }, [laadData])
+
+  function resetPaginatie() {
+    setPageState(p => ({ ...p, page: 0 }))
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-slate-900">Klanten</h1>
         <button
-          onClick={() => setNieuwOpen(true)}
+          onClick={() => navigate('/klanten/nieuw')}
           className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-3 py-2 rounded-md transition-colors"
         >
           <Plus className="h-4 w-4" /> Nieuwe klant
         </button>
       </div>
 
-      <div className="relative max-w-xs">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Zoeken op naam..."
-          value={zoekterm}
-          onChange={e => { setZoekterm(e.target.value); setPageState(p => ({ ...p, page: 0 })) }}
-          className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-        />
+      <div className="flex flex-col gap-2">
+        <div className="relative max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Zoeken op naam..."
+            value={zoekterm}
+            onChange={e => { setZoekterm(e.target.value); resetPaginatie() }}
+            className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-slate-500 shrink-0">Herkomst:</span>
+          {HERKOMST_FILTER.map(o => (
+            <button
+              key={o.value}
+              onClick={() => { setFilterHerkomst(o.value); resetPaginatie() }}
+              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                filterHerkomst === o.value
+                  ? 'bg-amber-600 text-white border-amber-600'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-amber-300 hover:text-amber-700'
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <DataTable
@@ -88,7 +119,7 @@ export function KlantenPage() {
         pageState={pageState}
         sortState={sortState}
         onPageChange={page => setPageState(p => ({ ...p, page }))}
-        onSortChange={sort => { setSortState(sort); setPageState(p => ({ ...p, page: 0 })) }}
+        onSortChange={sort => { setSortState(sort); resetPaginatie() }}
         onRowDoubleClick={r => navigate(`/klanten/${r.id}`)}
         onEdit={r => navigate(`/klanten/${r.id}`)}
         onDelete={async r => {
@@ -104,15 +135,6 @@ export function KlantenPage() {
         keyFn={r => r.id}
         emptyMessage="Geen klanten gevonden. Voeg een nieuwe klant toe."
       />
-
-      <SlideOver open={nieuwOpen} onClose={() => setNieuwOpen(false)} title="Nieuwe klant">
-        {nieuwOpen && (
-          <KlantForm
-            onOpgeslagen={() => { setNieuwOpen(false); laadData() }}
-            onAnnuleer={() => setNieuwOpen(false)}
-          />
-        )}
-      </SlideOver>
     </div>
   )
 }

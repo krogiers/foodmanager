@@ -54,8 +54,13 @@ class IngredientController(
         )
 
     @GetMapping("/nutrition/zoek")
-    fun zoekNutrition(@RequestParam query: String): ResponseEntity<*> =
-        service.zoekViaNutritionProvider(query).fold(
+    fun zoekNutrition(
+        @RequestParam query: String,
+        @RequestParam(defaultValue = "0") pagina: Int,
+        @RequestParam(defaultValue = "20") paginaGrootte: Int,
+        @RequestParam(required = false) merk: String?
+    ): ResponseEntity<*> =
+        service.zoekViaNutritionProvider(query, pagina, paginaGrootte, merk).fold(
             ifLeft = { it.naarResponseEntity() },
             ifRight = { ResponseEntity.ok(it) }
         )

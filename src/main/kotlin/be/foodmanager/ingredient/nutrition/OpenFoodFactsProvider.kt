@@ -23,21 +23,42 @@ class OpenFoodFactsProvider(
         .defaultHeader("User-Agent", "FoodManager/1.0 (contact@foodmanager.be)")
         .build()
 
-    override fun zoek(query: String): List<NutritionZoekResultaat> {
+    override fun zoek(query: String, pagina: Int, paginaGrootte: Int, merk: String?): NutritionZoekPagina {
+        val apiPagina = pagina + 1 // OpenFoodFacts is 1-indexed
+        val volleQuery = if (!merk.isNullOrBlank()) "$query $merk" else query
+
         val response = client.get()
-            .uri("$searchUrl/search?q={q}&fields=code,product_name,brands&page_size=20", query)
+            .uri(
+                "$searchUrl/search?q={q}&fields=code,product_name,product_name_nl,brands,completeness,allergens_tags&page_size=$paginaGrootte&page=$apiPagina&sort_by=unique_scans_n",
+                volleQuery
+            )
             .retrieve()
             .body(OffSearchResponse::class.java)
-            ?: return emptyList()
+            ?: return NutritionZoekPagina(emptyList(), 0, pagina, paginaGrootte)
 
-        return response.hits
-            .filter { it.code != null && it.productName != null }
-            .map { NutritionZoekResultaat(externeId = it.code!!, naam = it.productName!!, merk = it.brands) }
+        val resultaten = response.hits
+            .filter { it.code != null && (it.productNameNl != null || it.productName != null) }
+            .map {
+                NutritionZoekResultaat(
+                    externeId = it.code!!,
+                    naam = it.productNameNl ?: it.productName!!,
+                    merk = it.brands?.joinToString(", "),
+                    heeftVoedingswaarden = (it.completeness ?: 0.0) >= 0.4,
+                    heeftAllergenen = it.allergensTags?.isNotEmpty() == true
+                )
+            }
+
+        return NutritionZoekPagina(
+            resultaten = resultaten,
+            totaalAantal = response.count ?: resultaten.size,
+            pagina = pagina,
+            paginaGrootte = paginaGrootte
+        )
     }
 
     override fun haalDetail(externeId: String): NutritionDetail {
         val response = client.get()
-            .uri("$baseUrl/api/v2/product/{id}?fields=product_name,nutriments,allergens_tags", externeId)
+            .uri("$baseUrl/api/v2/product/{id}?fields=product_name,product_name_nl,nutriments,allergens_tags,categories_tags", externeId)
             .retrieve()
             .body(OffProductResponse::class.java)
             ?: throw IllegalStateException("Geen resultaat van Open Food Facts voor id: $externeId")
@@ -45,12 +66,13 @@ class OpenFoodFactsProvider(
         val product = response.product
             ?: throw IllegalStateException("Product niet gevonden in Open Food Facts: $externeId")
 
-        val n = product.nutriments ?: OffNutriments()
+        val n = product.nutriments
 
         return NutritionDetail(
-            naam = product.productName ?: externeId,
-            voedingswaarden = VoedingswaardePer100(
-                energie = n.energieKcal100g ?: BigDecimal.ZERO,
+            naam = product.productNameNl ?: product.productName ?: externeId,
+            categorie = bepaalCategorie(product.categoriesTags),
+            voedingswaarden = if (n?.energieKcal100g != null) VoedingswaardePer100(
+                energie = n.energieKcal100g,
                 eiwitten = n.eiwitten100g ?: BigDecimal.ZERO,
                 koolhydraten = n.koolhydraten100g ?: BigDecimal.ZERO,
                 suikers = n.suikers100g ?: BigDecimal.ZERO,
@@ -58,38 +80,112 @@ class OpenFoodFactsProvider(
                 verzadigdVet = n.verzadigdVet100g ?: BigDecimal.ZERO,
                 vezels = n.vezels100g ?: BigDecimal.ZERO,
                 zout = n.zout100g ?: BigDecimal.ZERO
-            ),
+            ) else null,
             allergenen = parseAllergenen(product.allergensTags)
         )
     }
 
+    private fun bepaalCategorie(tags: List<String>?): String? {
+        if (tags.isNullOrEmpty()) return null
+        // Prefer Dutch tag (nl:...) first
+        val nlTag = tags.firstOrNull { it.startsWith("nl:") }
+            ?.removePrefix("nl:")
+            ?.replaceFirstChar { it.uppercase() }
+        if (nlTag != null) return nlTag
+        // Fall back to English tag mapped to Dutch
+        return tags.mapNotNull { tag ->
+            val sleutel = tag.removePrefix("en:").lowercase()
+            OFF_CATEGORIE_MAP[sleutel]
+        }.firstOrNull()
+    }
+
     private fun parseAllergenen(tags: List<String>?): List<IngredientAllergeen> {
         if (tags.isNullOrEmpty()) return emptyList()
-
         return tags.mapNotNull { tag ->
-            val aanwezigheid = when {
-                tag.startsWith("en:may-contain:") || tag.contains("may-contain") -> AllergeenAanwezigheid.KAN_BEVATTEN
-                else -> AllergeenAanwezigheid.BEVAT
-            }
-            val allergeenNaam = tag
+            val kanBevatten = tag.startsWith("en:may-contain:") || tag.contains("may-contain")
+            val aanwezigheid = if (kanBevatten) AllergeenAanwezigheid.KAN_BEVATTEN else AllergeenAanwezigheid.BEVAT
+            val sleutel = tag
                 .removePrefix("en:may-contain:")
                 .removePrefix("en:")
-                .uppercase()
-                .replace("-", "_")
-
-            val allergeen = runCatching { Allergeen.valueOf(allergeenNaam) }.getOrNull()
-            allergeen?.let { IngredientAllergeen(it, aanwezigheid) }
+                .lowercase()
+            OFF_ALLERGEEN_MAP[sleutel]?.let { IngredientAllergeen(it, aanwezigheid) }
         }
     }
 
+    companion object {
+        private val OFF_CATEGORIE_MAP = mapOf(
+            "wheat-flours" to "Bloem", "flours" to "Bloem", "starches" to "Zetmeel",
+            "cereals-and-their-products" to "Granen", "cereals" to "Granen",
+            "breads" to "Brood", "pastries" to "Gebak", "biscuits-and-cakes" to "Koeken en cakes",
+            "dairy-products" to "Zuivel", "milks" to "Melk", "butters" to "Boter",
+            "cheeses" to "Kaas", "creams" to "Room", "yogurts" to "Yoghurt",
+            "eggs" to "Eieren",
+            "fruits" to "Fruit", "vegetables" to "Groenten",
+            "meats" to "Vlees", "poultry" to "Gevogelte",
+            "fish-and-seafood" to "Vis en zeevruchten", "fish" to "Vis",
+            "sugars" to "Suiker", "chocolate-products" to "Chocolade",
+            "honeys" to "Honing", "jams" to "Confituur",
+            "nuts" to "Noten", "seeds" to "Zaden",
+            "herbs-and-spices" to "Kruiden en specerijen", "spices" to "Specerijen",
+            "herbs" to "Kruiden",
+            "fats" to "Vetten en oliën", "plant-based-oils" to "Plantaardige oliën",
+            "olive-oils" to "Olijfolie", "vegetable-oils" to "Plantaardige oliën",
+            "condiments" to "Condimenten", "sauces" to "Sauzen",
+            "beverages" to "Dranken", "waters" to "Water",
+            "salt" to "Zout", "vinegars" to "Azijn",
+            "yeasts" to "Gist", "leavening-agents" to "Rijsmiddelen",
+            "baking-preparations" to "Bakpreparaten",
+        )
+
+        private val OFF_ALLERGEEN_MAP = mapOf(
+            "gluten" to Allergeen.GLUTEN,
+            "wheat" to Allergeen.GLUTEN,
+            "rye" to Allergeen.GLUTEN,
+            "barley" to Allergeen.GLUTEN,
+            "oats" to Allergeen.GLUTEN,
+            "spelt" to Allergeen.GLUTEN,
+            "crustaceans" to Allergeen.SCHAALDIEREN,
+            "crustacean" to Allergeen.SCHAALDIEREN,
+            "eggs" to Allergeen.EIEREN,
+            "egg" to Allergeen.EIEREN,
+            "fish" to Allergeen.VIS,
+            "peanuts" to Allergeen.PINDA,
+            "peanut" to Allergeen.PINDA,
+            "soybeans" to Allergeen.SOJA,
+            "soybean" to Allergeen.SOJA,
+            "soy" to Allergeen.SOJA,
+            "soya" to Allergeen.SOJA,
+            "milk" to Allergeen.MELK,
+            "dairy" to Allergeen.MELK,
+            "nuts" to Allergeen.NOTEN,
+            "tree-nuts" to Allergeen.NOTEN,
+            "celery" to Allergeen.SELDERIJ,
+            "mustard" to Allergeen.MOSTERD,
+            "sesame" to Allergeen.SESAM,
+            "sesame-seeds" to Allergeen.SESAM,
+            "sesame-seed" to Allergeen.SESAM,
+            "sulphur-dioxide-and-sulphites" to Allergeen.SULFIET,
+            "sulphites" to Allergeen.SULFIET,
+            "sulfites" to Allergeen.SULFIET,
+            "lupin" to Allergeen.LUPINE,
+            "lupine" to Allergeen.LUPINE,
+            "molluscs" to Allergeen.WEEKDIEREN,
+            "molluscs-and-mollusc-products" to Allergeen.WEEKDIEREN,
+            "mollusks" to Allergeen.WEEKDIEREN,
+        )
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
-    data class OffSearchResponse(val hits: List<OffSearchHit> = emptyList())
+    data class OffSearchResponse(val hits: List<OffSearchHit> = emptyList(), val count: Int? = null)
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class OffSearchHit(
         val code: String? = null,
         @JsonProperty("product_name") val productName: String? = null,
-        val brands: String? = null
+        @JsonProperty("product_name_nl") val productNameNl: String? = null,
+        val brands: List<String>? = null,
+        val completeness: Double? = null,
+        @JsonProperty("allergens_tags") val allergensTags: List<String>? = null
     )
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -98,8 +194,10 @@ class OpenFoodFactsProvider(
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class OffProduct(
         @JsonProperty("product_name") val productName: String? = null,
+        @JsonProperty("product_name_nl") val productNameNl: String? = null,
         val nutriments: OffNutriments? = null,
-        @JsonProperty("allergens_tags") val allergensTags: List<String>? = null
+        @JsonProperty("allergens_tags") val allergensTags: List<String>? = null,
+        @JsonProperty("categories_tags") val categoriesTags: List<String>? = null
     )
 
     @JsonIgnoreProperties(ignoreUnknown = true)
