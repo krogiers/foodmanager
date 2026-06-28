@@ -117,6 +117,25 @@ SlideOver (`<SlideOver>`) is **verboden** voor detail, bewerken en aanmaken. Het
 - **Diepere navigatie**: breadcrumbs tonen (bv. Recepten › Chocoladetaart)
 - **Allergenen**: altijd weergeven als gekleurde badges waar relevant
 
+### Rich text — `RijkeEditor`
+
+Voor vrije tekstvelden met opmaak (bereidingswijze, beschrijvingen, notities) wordt de `RijkeEditor`-component gebruikt (`components/ui/RijkeEditor.tsx`).
+
+**Consistentieregel — VERPLICHT:**
+> Wat de gebruiker in de editor ziet, moet identiek zijn aan wat in de weergavemodus (readonly) te zien is. Opsommingen, genummerde lijsten, koppen, vet — alles moet 1-op-1 overeenkomen.
+
+Hoe dit gegarandeerd wordt:
+- De `RijkeEditor` gebruikt altijd TipTap's `EditorContent` — zowel in edit- als in readonly-modus
+- Alle stijlen staan in de constante `EDITOR_CONTENT_STYLES` in `RijkeEditor.tsx`
+- **Nooit** `dangerouslySetInnerHTML` gebruiken voor het weergeven van TipTap-inhoud — dat omzeilt de stijlen
+- Stijlwijzigingen worden altijd in `EDITOR_CONTENT_STYLES` aangebracht, nooit lokaal per pagina
+
+Props:
+- `waarde: string` — HTML-string (opgeslagen als TEXT in de DB)
+- `onChange: (html: string) => void` — callback bij wijziging (ongebruikt in readonly)
+- `readonly?: boolean` — verbergt toolbar, schakelt bewerken uit, toont identieke opmaak
+- `placeholder?: string` — optionele placeholder voor lege editor
+
 ## Packagestructuur
 
 Organiseer per module (feature), niet per laag:

@@ -58,7 +58,7 @@ class OpenFoodFactsProvider(
 
     override fun haalDetail(externeId: String): NutritionDetail {
         val response = client.get()
-            .uri("$baseUrl/api/v2/product/{id}?fields=product_name,product_name_nl,nutriments,allergens_tags,categories_tags", externeId)
+            .uri("$baseUrl/api/v2/product/{id}?fields=product_name,product_name_nl,nutriments,allergens_tags", externeId)
             .retrieve()
             .body(OffProductResponse::class.java)
             ?: throw IllegalStateException("Geen resultaat van Open Food Facts voor id: $externeId")
@@ -70,7 +70,6 @@ class OpenFoodFactsProvider(
 
         return NutritionDetail(
             naam = product.productNameNl ?: product.productName ?: externeId,
-            categorie = bepaalCategorie(product.categoriesTags),
             voedingswaarden = if (n?.energieKcal100g != null) VoedingswaardePer100(
                 energie = n.energieKcal100g,
                 eiwitten = n.eiwitten100g ?: BigDecimal.ZERO,
@@ -83,20 +82,6 @@ class OpenFoodFactsProvider(
             ) else null,
             allergenen = parseAllergenen(product.allergensTags)
         )
-    }
-
-    private fun bepaalCategorie(tags: List<String>?): String? {
-        if (tags.isNullOrEmpty()) return null
-        // Prefer Dutch tag (nl:...) first
-        val nlTag = tags.firstOrNull { it.startsWith("nl:") }
-            ?.removePrefix("nl:")
-            ?.replaceFirstChar { it.uppercase() }
-        if (nlTag != null) return nlTag
-        // Fall back to English tag mapped to Dutch
-        return tags.mapNotNull { tag ->
-            val sleutel = tag.removePrefix("en:").lowercase()
-            OFF_CATEGORIE_MAP[sleutel]
-        }.firstOrNull()
     }
 
     private fun parseAllergenen(tags: List<String>?): List<IngredientAllergeen> {
@@ -113,30 +98,6 @@ class OpenFoodFactsProvider(
     }
 
     companion object {
-        private val OFF_CATEGORIE_MAP = mapOf(
-            "wheat-flours" to "Bloem", "flours" to "Bloem", "starches" to "Zetmeel",
-            "cereals-and-their-products" to "Granen", "cereals" to "Granen",
-            "breads" to "Brood", "pastries" to "Gebak", "biscuits-and-cakes" to "Koeken en cakes",
-            "dairy-products" to "Zuivel", "milks" to "Melk", "butters" to "Boter",
-            "cheeses" to "Kaas", "creams" to "Room", "yogurts" to "Yoghurt",
-            "eggs" to "Eieren",
-            "fruits" to "Fruit", "vegetables" to "Groenten",
-            "meats" to "Vlees", "poultry" to "Gevogelte",
-            "fish-and-seafood" to "Vis en zeevruchten", "fish" to "Vis",
-            "sugars" to "Suiker", "chocolate-products" to "Chocolade",
-            "honeys" to "Honing", "jams" to "Confituur",
-            "nuts" to "Noten", "seeds" to "Zaden",
-            "herbs-and-spices" to "Kruiden en specerijen", "spices" to "Specerijen",
-            "herbs" to "Kruiden",
-            "fats" to "Vetten en oliën", "plant-based-oils" to "Plantaardige oliën",
-            "olive-oils" to "Olijfolie", "vegetable-oils" to "Plantaardige oliën",
-            "condiments" to "Condimenten", "sauces" to "Sauzen",
-            "beverages" to "Dranken", "waters" to "Water",
-            "salt" to "Zout", "vinegars" to "Azijn",
-            "yeasts" to "Gist", "leavening-agents" to "Rijsmiddelen",
-            "baking-preparations" to "Bakpreparaten",
-        )
-
         private val OFF_ALLERGEEN_MAP = mapOf(
             "gluten" to Allergeen.GLUTEN,
             "wheat" to Allergeen.GLUTEN,
@@ -196,8 +157,7 @@ class OpenFoodFactsProvider(
         @JsonProperty("product_name") val productName: String? = null,
         @JsonProperty("product_name_nl") val productNameNl: String? = null,
         val nutriments: OffNutriments? = null,
-        @JsonProperty("allergens_tags") val allergensTags: List<String>? = null,
-        @JsonProperty("categories_tags") val categoriesTags: List<String>? = null
+        @JsonProperty("allergens_tags") val allergensTags: List<String>? = null
     )
 
     @JsonIgnoreProperties(ignoreUnknown = true)

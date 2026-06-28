@@ -26,7 +26,6 @@ export interface IngredientResponse {
   naam: string
   eenheid: Eenheid
   aankoopprijs: number | null
-  categorie: string | null
   voedingswaarden: VoedingswaardenResponse | null
   allergenen: IngredientAllergeenResponse[]
 }

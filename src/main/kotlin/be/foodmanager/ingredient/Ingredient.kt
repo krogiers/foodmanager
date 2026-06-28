@@ -10,7 +10,6 @@ object IngredietenTable : Table("ingredienten") {
     val naam = varchar("naam", 255).uniqueIndex()
     val eenheid = enumerationByName<Eenheid>("eenheid", 10)
     val aankoopprijs = decimal("aankoopprijs", 10, 4).nullable()
-    val categorie = varchar("categorie", 255).nullable()
     val energieKcal = decimal("energie_kcal", 8, 2).nullable()
     val eiwitten = decimal("eiwitten_g", 8, 2).nullable()
     val koolhydraten = decimal("koolhydraten_g", 8, 2).nullable()
@@ -34,7 +33,6 @@ data class Ingredient(
     val naam: String,
     val eenheid: Eenheid,
     val aankoopprijs: BigDecimal? = null,
-    val categorie: String? = null,
     val voedingswaarden: VoedingswaardePer100? = null,
     val allergenen: List<IngredientAllergeen> = emptyList()
 )

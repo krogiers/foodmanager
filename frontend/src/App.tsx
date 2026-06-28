@@ -8,6 +8,14 @@ import { IngredientDetailPage } from './pages/ingredienten/IngredientDetailPage'
 import { KlantenPage } from './pages/klanten/KlantenPage'
 import { KlantNieuwPage } from './pages/klanten/KlantNieuwPage'
 import { KlantDetailPage } from './pages/klanten/KlantDetailPage'
+import { ReceptenPage } from './pages/recepten/ReceptenPage'
+import { ReceptNieuwPage } from './pages/recepten/ReceptNieuwPage'
+import { ReceptDetailPage } from './pages/recepten/ReceptDetailPage'
+import { LabelsPage } from './pages/labels/LabelsPage'
+import { LabelNieuwPage } from './pages/labels/LabelNieuwPage'
+import { LabelDetailPage } from './pages/labels/LabelDetailPage'
+import { LabelAfdrukPage } from './pages/labels/LabelAfdrukPage'
+import { InstellingenPage } from './pages/admin/InstellingenPage'
 
 export default function App() {
   return (
@@ -22,11 +30,17 @@ export default function App() {
           <Route path="/klanten" element={<KlantenPage />} />
           <Route path="/klanten/nieuw" element={<KlantNieuwPage />} />
           <Route path="/klanten/:id" element={<KlantDetailPage />} />
-          <Route path="/recepten" element={<Placeholder titel="Recepten" />} />
+          <Route path="/recepten" element={<ReceptenPage />} />
+          <Route path="/recepten/nieuw" element={<ReceptNieuwPage />} />
+          <Route path="/recepten/:id" element={<ReceptDetailPage />} />
           <Route path="/producten" element={<Placeholder titel="Producten" />} />
           <Route path="/reservaties" element={<Placeholder titel="Reservaties" />} />
-          <Route path="/labels" element={<Placeholder titel="Labels" />} />
+          <Route path="/labels" element={<LabelsPage />} />
+          <Route path="/labels/nieuw" element={<LabelNieuwPage />} />
+          <Route path="/labels/:id" element={<LabelDetailPage />} />
+          <Route path="/labels/:id/afdruk" element={<LabelAfdrukPage />} />
           <Route path="/stock" element={<Placeholder titel="Stock" />} />
+          <Route path="/instellingen" element={<InstellingenPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -6,8 +6,8 @@ import { ChevronRight, Plus, X } from 'lucide-react'
 import { AllergeenBadge } from '../../components/ui/AllergeenBadge'
 import {
   EENHEID_OPTIES, EENHEID_KORT, ALLERGEEN_LABELS, AANWEZIGHEID_OPTIES, AANWEZIGHEID_LABELS,
-  buildIngredientBody,
-  type IngredientFormData, type VoedingswaardenFormData, type AllergeenRij,
+  buildIngredientBody, VoedingswaardenSectie,
+  type IngredientFormData, type VoedingswaardenFormData,
 } from './IngredientForm'
 import type { IngredientResponse, Eenheid, Allergeen, AllergeenAanwezigheid } from '../../types/ingredient'
 
@@ -24,7 +24,6 @@ function vanIngredient(i: IngredientResponse): IngredientFormData {
     naam: i.naam,
     eenheid: i.eenheid,
     aankoopprijs: i.aankoopprijs != null ? String(i.aankoopprijs) : '',
-    categorie: i.categorie ?? '',
     heeftVoedingswaarden: i.voedingswaarden != null,
     voedingswaarden: i.voedingswaarden
       ? {
@@ -201,6 +200,11 @@ function GegevensTabblad({ ingredient, bewerk, f, setVeld, setVw }: {
 }) {
   const gebruikteAllergenen = new Set(f.allergenen.map(a => a.allergeen))
 
+  function vulVoedingswaardenIn(vw: VoedingswaardenFormData) {
+    setVeld('heeftVoedingswaarden', true)
+    setVeld('voedingswaarden', vw)
+  }
+
   function voegAllergeenToe() {
     const vrij = ALLE_ALLERGENEN.find(a => !gebruikteAllergenen.has(a))
     if (!vrij) return
@@ -255,48 +259,33 @@ function GegevensTabblad({ ingredient, bewerk, f, setVeld, setVw }: {
               />
             </div>
           </Veld>
-          <Veld label="Categorie" bewerk={bewerk} weergave={ingredient.categorie ?? undefined}>
-            <input
-              value={f.categorie}
-              onChange={e => setVeld('categorie', e.target.value)}
-              className={invoeerveld}
-              placeholder="bv. Bloem, Zuivel, Groenten…"
-            />
-          </Veld>
         </div>
       </Sectie>
 
       {/* Voedingswaarden */}
       <Sectie titel="Voedingswaarden per 100g/ml">
-        {bewerk && (
-          <label className="flex items-center gap-2 cursor-pointer mb-3">
-            <input
-              type="checkbox" checked={f.heeftVoedingswaarden}
-              onChange={e => setVeld('heeftVoedingswaarden', e.target.checked)}
-              className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-            />
-            <span className="text-sm text-slate-600">Voedingswaarden invullen</span>
-          </label>
-        )}
-        {(bewerk ? f.heeftVoedingswaarden : ingredient.voedingswaarden != null) ? (
+        {bewerk ? (
+          <VoedingswaardenSectie
+            heeftVoedingswaarden={f.heeftVoedingswaarden}
+            voedingswaarden={f.voedingswaarden}
+            onToggle={checked => setVeld('heeftVoedingswaarden', checked)}
+            onWijzig={setVw}
+            onVulIn={vulVoedingswaardenIn}
+          />
+        ) : ingredient.voedingswaarden != null ? (
           <div className="grid grid-cols-4 gap-4">
             {([
-              ['energie', 'Energie (kcal)', ingredient.voedingswaarden?.energie],
-              ['eiwitten', 'Eiwitten (g)', ingredient.voedingswaarden?.eiwitten],
-              ['koolhydraten', 'Koolhydraten (g)', ingredient.voedingswaarden?.koolhydraten],
-              ['suikers', '↳ Suikers (g)', ingredient.voedingswaarden?.suikers],
-              ['vetten', 'Vetten (g)', ingredient.voedingswaarden?.vetten],
-              ['verzadigdVet', '↳ Verzadigd (g)', ingredient.voedingswaarden?.verzadigdVet],
-              ['vezels', 'Vezels (g)', ingredient.voedingswaarden?.vezels],
-              ['zout', 'Zout (g)', ingredient.voedingswaarden?.zout],
-            ] as [keyof VoedingswaardenFormData, string, number | undefined][]).map(([key, label, waarde]) => (
-              <Veld key={key} label={label} bewerk={bewerk} weergave={waarde != null ? String(waarde) : undefined}>
-                <input
-                  type="number" min="0" step="0.01"
-                  value={f.voedingswaarden[key]}
-                  onChange={e => setVw(key, e.target.value)}
-                  className={invoeerveld} placeholder="0"
-                />
+              ['energie', 'Energie (kcal)', ingredient.voedingswaarden.energie],
+              ['eiwitten', 'Eiwitten (g)', ingredient.voedingswaarden.eiwitten],
+              ['koolhydraten', 'Koolhydraten (g)', ingredient.voedingswaarden.koolhydraten],
+              ['suikers', '↳ Suikers (g)', ingredient.voedingswaarden.suikers],
+              ['vetten', 'Vetten (g)', ingredient.voedingswaarden.vetten],
+              ['verzadigdVet', '↳ Verzadigd (g)', ingredient.voedingswaarden.verzadigdVet],
+              ['vezels', 'Vezels (g)', ingredient.voedingswaarden.vezels],
+              ['zout', 'Zout (g)', ingredient.voedingswaarden.zout],
+            ] as [string, string, number][]).map(([key, label, waarde]) => (
+              <Veld key={key} label={label} bewerk={false} weergave={String(waarde)}>
+                <></>
               </Veld>
             ))}
           </div>

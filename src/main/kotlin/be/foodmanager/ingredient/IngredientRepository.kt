@@ -81,6 +81,9 @@ class IngredientRepository {
         IngredietenTable.deleteWhere { IngredietenTable.id eq id }
     }
 
+    fun findAllergenenVoorIds(ids: List<UUID>): Map<UUID, List<IngredientAllergeen>> =
+        allergenenVoorIds(ids)
+
     private fun allergenenVoor(id: UUID): List<IngredientAllergeen> =
         IngredientAllergeenTable.selectAll()
             .where { IngredientAllergeenTable.ingredientId eq id }
@@ -116,7 +119,6 @@ private fun UpdateBuilder<*>.vulIn(ingredient: Ingredient) {
     this[IngredietenTable.naam] = ingredient.naam
     this[IngredietenTable.eenheid] = ingredient.eenheid
     this[IngredietenTable.aankoopprijs] = ingredient.aankoopprijs
-    this[IngredietenTable.categorie] = ingredient.categorie
     this[IngredietenTable.energieKcal] = ingredient.voedingswaarden?.energie
     this[IngredietenTable.eiwitten] = ingredient.voedingswaarden?.eiwitten
     this[IngredietenTable.koolhydraten] = ingredient.voedingswaarden?.koolhydraten
@@ -134,7 +136,6 @@ private fun ResultRow.naarDomein(allergenen: List<IngredientAllergeen>): Ingredi
         naam = this[IngredietenTable.naam],
         eenheid = this[IngredietenTable.eenheid],
         aankoopprijs = this[IngredietenTable.aankoopprijs],
-        categorie = this[IngredietenTable.categorie],
         voedingswaarden = if (heeftVoedingswaarden) VoedingswaardePer100(
             energie = this[IngredietenTable.energieKcal]!!,
             eiwitten = this[IngredietenTable.eiwitten]!!,

@@ -1,5 +1,6 @@
 package be.foodmanager.ingredient
 
+import arrow.core.Either
 import be.foodmanager.common.PageRequest
 import be.foodmanager.ingredient.dto.*
 import be.foodmanager.ingredient.nutrition.NutritionProviderService
@@ -65,9 +66,18 @@ class IngredientController(
             ifRight = { ResponseEntity.ok(it) }
         )
 
-    @PostMapping("/nutrition/importeer/{externeId}")
+    @GetMapping("/nutrition/detail")
+    fun haalNutritionDetail(@RequestParam externeId: String): ResponseEntity<*> =
+        Either.catch { nutritionProviderService.haalDetail(externeId) }
+            .mapLeft { IngredientFout.ExterneProviderFout(it.message ?: "Onbekende fout") }
+            .fold(
+                ifLeft = { it.naarResponseEntity() },
+                ifRight = { ResponseEntity.ok(it) }
+            )
+
+    @PostMapping("/nutrition/importeer")
     fun importeerVanProvider(
-        @PathVariable externeId: String,
+        @RequestParam externeId: String,
         @RequestParam naam: String,
         @RequestParam eenheid: Eenheid,
         @RequestParam(required = false) aankoopprijs: BigDecimal?

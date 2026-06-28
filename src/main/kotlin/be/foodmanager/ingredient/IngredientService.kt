@@ -40,7 +40,6 @@ class IngredientService(
             naam = request.naam,
             eenheid = request.eenheid,
             aankoopprijs = request.aankoopprijs,
-            categorie = request.categorie,
             voedingswaarden = request.voedingswaarden?.naarDomein(),
             allergenen = request.allergenen.map { it.naarDomein() }
         )
@@ -62,7 +61,6 @@ class IngredientService(
             naam = request.naam,
             eenheid = request.eenheid,
             aankoopprijs = request.aankoopprijs,
-            categorie = request.categorie,
             voedingswaarden = request.voedingswaarden?.naarDomein(),
             allergenen = request.allergenen.map { it.naarDomein() }
         )
@@ -104,7 +102,6 @@ class IngredientService(
                     naam = naam,
                     eenheid = eenheid,
                     aankoopprijs = aankoopprijs,
-                    categorie = detail.categorie,
                     voedingswaarden = detail.voedingswaarden,
                     allergenen = detail.allergenen
                 ).let { repository.save(it) }
@@ -118,7 +115,6 @@ private fun Ingredient.naarResponse() = IngredientResponse(
     naam = naam,
     eenheid = eenheid,
     aankoopprijs = aankoopprijs,
-    categorie = categorie,
     voedingswaarden = voedingswaarden?.naarResponse(),
     allergenen = allergenen.map { IngredientAllergeenResponse(it.allergeen, it.aanwezigheid) }
 )

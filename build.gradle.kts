@@ -30,6 +30,8 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-spring-boot-starter:0.55.0")
     implementation("org.jetbrains.exposed:exposed-java-time:0.55.0")
 
+    implementation("com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10")
+
     runtimeOnly("com.h2database:h2")
     runtimeOnly("org.postgresql:postgresql")
 

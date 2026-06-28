@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { FlaskConical, BookOpen, ShoppingBag, Users, CalendarDays, Tag, Package, LayoutDashboard } from 'lucide-react'
+import { FlaskConical, BookOpen, ShoppingBag, Users, CalendarDays, Tag, Package, LayoutDashboard, Settings } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const groepen = [
@@ -18,6 +18,12 @@ const groepen = [
     items: [
       { to: '/klanten', label: 'Klanten', icon: Users },
       { to: '/reservaties', label: 'Reservaties', icon: CalendarDays },
+    ]
+  },
+  {
+    label: 'Beheer',
+    items: [
+      { to: '/instellingen', label: 'Instellingen', icon: Settings },
     ]
   },
 ]

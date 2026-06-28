@@ -34,7 +34,6 @@ data class NutritionZoekPagina(
 
 data class NutritionDetail(
     val naam: String,
-    val categorie: String? = null,
     val voedingswaarden: VoedingswaardePer100? = null,
     val allergenen: List<IngredientAllergeen> = emptyList()
 )

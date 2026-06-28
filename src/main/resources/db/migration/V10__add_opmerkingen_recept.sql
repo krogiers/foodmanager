@@ -1,0 +1,1 @@
+ALTER TABLE recepten ADD COLUMN IF NOT EXISTS opmerkingen TEXT;

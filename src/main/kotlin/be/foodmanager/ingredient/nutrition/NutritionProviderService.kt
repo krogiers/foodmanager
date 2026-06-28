@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
+@Transactional(readOnly = true)
 class NutritionProviderService(
     private val registry: NutritionProviderRegistry,
     private val instellingenRepository: ProviderInstellingenRepository
